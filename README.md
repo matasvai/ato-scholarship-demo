@@ -1,6 +1,6 @@
 # ATO Scholarship Portal — proof of concept
 
-**[Open the live demo](https://matasvai.github.io/ato-scholarship-demo/)** · **[Open the chair view](https://matasvai.github.io/ato-scholarship-demo/?view=chair#queue)**
+**[Open the member demo](https://matasvai.github.io/ato-scholarship-demo/?view=alex#overview)** · **[Open the chair view](https://matasvai.github.io/ato-scholarship-demo/?view=chair#queue)**
 
 The GitHub Pages version runs in your browser using a service worker and IndexedDB. Its API is explicitly simulated; records stay in that browser and are not shared with other visitors. The Node version below still provides the real local HTTP backend.
 
