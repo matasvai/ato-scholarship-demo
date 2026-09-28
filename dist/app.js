@@ -1,4 +1,8 @@
 "use strict";
+const SITE_BASE = new URL(".", document.currentScript.src);
+const PAGES_MODE =
+  location.hostname.endsWith(".github.io") ||
+  new URL(location.href).searchParams.has("pages-demo");
 const $ = (s) => document.querySelector(s),
   esc = (s) =>
     String(s ?? "").replace(
@@ -43,7 +47,7 @@ async function api(path, { method = "GET", body, raw = false } = {}) {
   const start = performance.now();
   let response, payload;
   try {
-    response = await fetch(path, {
+    response = await fetch(new URL(path.replace(/^\//, ""), SITE_BASE), {
       method,
       credentials: "same-origin",
       headers: {
@@ -220,12 +224,17 @@ function apiPage() {
     heading(
       "WORKING API DEMONSTRATION",
       "SEE WHAT HAPPENS UNDERNEATH.",
-      "Real HTTP requests from this browser to the local demo backend.",
+      PAGES_MODE
+        ? "API-shaped requests handled in this browser by a service worker. No server is running."
+        : "Real HTTP requests from this browser to the local demo backend.",
       '<button class="button gold" data-action="ping">Run a live request</button>',
     ) +
-    `<div class="integration-grid"><section class="panel"><span class="status approved">Live demo API</span><h3 style="margin-top:16px">SUBMISSIONS & POINTS</h3><p>HTTP endpoints, server-side rules, SQLite records, review history, and role checks.</p></section><section class="panel"><span class="status pending">Not connected</span><h3 style="margin-top:16px">MICROSOFT / GOOGLE</h3><p>University identity provider. Buttons are previews; no OAuth tokens are issued.</p></section><section class="panel"><span class="status pending">Not connected</span><h3 style="margin-top:16px">CANVAS / DRIVE / GRAPH</h3><p>Sample Canvas import is available. Live provider access is not connected. CSV export works now.</p></section></div><section class="panel"><div class="section-heading"><h2>REQUEST LOG <span class="review-count">${logs.length} requests</span></h2><button class="text-btn" data-action="clear-log">Clear log</button></div><p class="footnote">Select a request to inspect its actual payload and response. Cookies and credentials are not logged.</p><div class="api-log">${logs.map((l, i) => `<button class="api-row" data-action="request-detail" data-index="${i}"><span class="http-method">${l.method}</span><code>${esc(l.path)}</code><span class="http-status ${Number(l.status) >= 400 ? "bad" : ""}">${esc(l.status)}</span><span class="muted">${l.ms} ms</span></button>`).join("") || '<p class="muted">No requests yet. Run a live request above.</p>'}</div></section><div class="overview-grid" style="margin-top:24px"><section class="panel"><h2>TRY AN ACCESS CHECK</h2><p>The backend scopes records to the selected demo member and rejects chair-only actions from a member role.</p><button class="button ghost" data-action="access-check" ${user.role === "chair" ? "disabled" : ""}>Test another member’s record</button><p class="footnote" style="margin-top:12px">${user.role === "chair" ? "Switch to a member to test a rejected request." : "Expected result: 404. Another member’s record is not returned."}</p></section><section class="panel"><h2>WHAT THIS PROVES</h2><p>The submission and review flow uses a real backend. Role checks are implemented, but switching identities is intentionally open in the demo.</p><p class="footnote">This is not production authentication. Sessions expire after 24 hours. Fictional records persist in the local SQLite database during that session.</p></section></div>`;
+    `<div class="integration-grid"><section class="panel"><span class="status approved">${PAGES_MODE ? "Browser simulation" : "Live demo API"}</span><h3 style="margin-top:16px">SUBMISSIONS & POINTS</h3><p>${PAGES_MODE ? "Service-worker requests, browser rules, IndexedDB records, and simulated role checks." : "HTTP endpoints, server-side rules, SQLite records, review history, and role checks."}</p></section><section class="panel"><span class="status pending">Not connected</span><h3 style="margin-top:16px">MICROSOFT / GOOGLE</h3><p>University identity provider. Buttons are previews; no OAuth tokens are issued.</p></section><section class="panel"><span class="status pending">Not connected</span><h3 style="margin-top:16px">CANVAS / DRIVE / GRAPH</h3><p>Sample Canvas import is available. Live provider access is not connected. CSV export works now.</p></section></div><section class="panel"><div class="section-heading"><h2>REQUEST LOG <span class="review-count">${logs.length} requests</span></h2><button class="text-btn" data-action="clear-log">Clear log</button></div><p class="footnote">Select a request to inspect its actual payload and response. Cookies and credentials are not logged.</p><div class="api-log">${logs.map((l, i) => `<button class="api-row" data-action="request-detail" data-index="${i}"><span class="http-method">${l.method}</span><code>${esc(l.path)}</code><span class="http-status ${Number(l.status) >= 400 ? "bad" : ""}">${esc(l.status)}</span><span class="muted">${l.ms} ms</span></button>`).join("") || '<p class="muted">No requests yet. Run a live request above.</p>'}</div></section><div class="overview-grid" style="margin-top:24px"><section class="panel"><h2>TRY AN ACCESS CHECK</h2><p>${PAGES_MODE ? "The simulation scopes records to the selected demo member and demonstrates rejected requests. Browser checks are not a security boundary." : "The backend scopes records to the selected demo member and rejects chair-only actions from a member role."}</p><button class="button ghost" data-action="access-check" ${user.role === "chair" ? "disabled" : ""}>Test another member’s record</button><p class="footnote" style="margin-top:12px">${user.role === "chair" ? "Switch to a member to test a rejected request." : "Expected result: 404. Another member’s record is not returned."}</p></section><section class="panel"><h2>WHAT THIS PROVES</h2><p>${PAGES_MODE ? "This hosted version demonstrates the workflow without a backend. Anyone can switch roles, and all records stay in their browser." : "The submission and review flow uses a real backend. Role checks are implemented, but switching identities is intentionally open in the demo."}</p><p class="footnote">This is not production authentication. Sessions expire after 24 hours. ${PAGES_MODE ? "Fictional records persist only in this browser’s IndexedDB. They are not shared across devices." : "Fictional records persist in the local SQLite database during that session."}</p></section></div>`;
 }
 function render() {
+  if (PAGES_MODE)
+    document.querySelector(".demo-bar > span").innerHTML =
+      "<strong>GITHUB PAGES DEMO</strong> Fictional data · browser-simulated API · no real sign-in";
   if (!user || !rules) return;
   navigation();
   (
@@ -566,7 +575,7 @@ function registerTools() {
     ).catch(() => {});
   } catch {}
 }
-init();
+startApp();
 
 function canvasPage() {
   main.innerHTML =
@@ -624,4 +633,30 @@ async function importCanvas() {
   } finally {
     btn.disabled = false;
   }
+}
+
+async function startApp() {
+  if (PAGES_MODE) {
+    try {
+      if (!("serviceWorker" in navigator))
+        throw Error("This browser does not support the hosted demo.");
+      await navigator.serviceWorker.register(
+        new URL("demo-worker.js", SITE_BASE),
+        { scope: SITE_BASE.pathname, type: "module" },
+      );
+      await navigator.serviceWorker.ready;
+      if (!navigator.serviceWorker.controller)
+        await new Promise((resolve) =>
+          navigator.serviceWorker.addEventListener(
+            "controllerchange",
+            resolve,
+            { once: true },
+          ),
+        );
+    } catch (e) {
+      main.innerHTML = '<div class="error">' + esc(e.message) + "</div>";
+      return;
+    }
+  }
+  await init();
 }

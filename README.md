@@ -1,5 +1,9 @@
 # ATO Scholarship Portal — proof of concept
 
+**[Open the live demo](https://matasvai.github.io/ato-scholarship-demo/)** · **[Open the chair view](https://matasvai.github.io/ato-scholarship-demo/?view=chair#queue)**
+
+The GitHub Pages version runs in your browser using a service worker and IndexedDB. Its API is explicitly simulated; records stay in that browser and are not shared with other visitors. The Node version below still provides the real local HTTP backend.
+
 An API-driven scholarship submission and review demo for Alpha Tau Omega, Kappa Eta. The visual direction follows [ato.org](https://ato.org/): navy, gold, condensed headings, and simple rectangular controls.
 
 **Fictional data only. This is not a live chapter system.** Microsoft / Google sign-in is simulated. Canvas returns local sample fixtures. No university account, Canvas server, Google Drive, Microsoft Graph, or Google Sheet is connected.
@@ -24,7 +28,7 @@ To choose a different port:
 ATO_DEMO_PORT=4174 npm start
 ```
 
-The server binds to loopback only. This repository is shareable source code, not a hosted application. Recipients can clone it and run their own isolated demo.
+The server binds to loopback only. The hosted GitHub Pages demo uses a browser simulation. Recipients can also clone this repository and run the real local backend.
 
 ## Try the workflow
 
